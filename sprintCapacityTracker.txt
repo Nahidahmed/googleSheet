@@ -1,0 +1,446 @@
+const numberOfSprints = 156;
+const numberOfDevResources = 4;
+var initSprintBaseIndex = 8; //Index on Base Info Work sheet from where the sprint info starts
+
+var spreadsheet = SpreadsheetApp.getActive();
+function generateSprint2025() {
+  
+  for (let i = 1; i <= numberOfSprints; i = i + (numberOfDevResources + 2)) {
+    var sprintName = '\'Base Info\'!B'+initSprintBaseIndex;
+    var sprintStartDate = '\'Base Info\'!C'+initSprintBaseIndex;
+    var sprintEndDate = '\'Base Info\'!D'+initSprintBaseIndex;
+
+    spreadsheet.getRange('A'+ i).activate();
+    //spreadsheet.getCurrentCell().setFormula('=CONCATENATE(\'Base Info\'!B11, " ", TO_TEXT(\'Base Info\'!C11), " - " , TO_TEXT(\'Base Info\'!D11))');
+    spreadsheet.getCurrentCell().setFormula('=CONCATENATE('+sprintName + ', " ", TO_TEXT('+sprintStartDate+'), " - " , TO_TEXT('+ sprintEndDate+'))');
+  
+    spreadsheet.getRange('A'+i +':P'+i).activate()
+    .mergeAcross();
+    spreadsheet.getActiveRangeList().setFontWeight('bold')
+    .setFontSize(13)
+    .setBackground('#b7b7b7');
+    spreadsheet.getRange('A'+i).activate();
+
+    //Set Sprint Columns
+    //why i+ 1 and i + 2 - because headers should start in the next row
+    
+    setSprintColumns(i+1,sprintStartDate,spreadsheet);
+    setResourceNames(i+2,spreadsheet);
+    formatDateRanges(i+2,spreadsheet);
+    setWeekend(i+2,spreadsheet);
+    setDefaultAttendance(i+2,spreadsheet);
+    calculateSprintAttendance(i+2,spreadsheet);
+    initSprintBaseIndex++;
+  }
+  resizeCols();
+};
+
+//region All Sub Functions of generateSprint2025
+
+function setSprintColumns(j,sprintStartDate,spreadsheet) {
+  spreadsheet.getRange('A'+j).activate();
+  spreadsheet.getCurrentCell().setValue('Resource Name');
+  spreadsheet.getRange('B'+j).activate();
+  spreadsheet.getCurrentCell().setValue('No. of Days Present');
+  spreadsheet.getRange('C'+j).activate();
+  spreadsheet.getCurrentCell().setFormula(sprintStartDate);
+  spreadsheet.getRange('D'+j).activate();
+  spreadsheet.getCurrentCell().setFormula('=C'+j +'+1');
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange('D'+j +':J'+j), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+  spreadsheet.getRange('D'+j +':J'+j).activate();
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange('D'+j +':P'+j), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+  spreadsheet.getRange('A'+j +':P'+j).activate();
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);  
+};
+
+function setResourceNames(j,spreadsheet) {
+  k = j + (numberOfDevResources-1);
+  spreadsheet.getRange('A'+j).activate();
+  spreadsheet.getCurrentCell().setFormula('=\'Base Info\'!A2');
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange('A'+j+':A'+k), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+  spreadsheet.getRange('A'+j+':A'+k).activate();
+};
+
+function formatDateRanges(k,spreadsheet) {
+  
+    l = k + + (numberOfDevResources-1);
+    var firstDateRange = 'C'+k+':C'+l;
+    var secondDateRange = 'F'+ k +':J'+l;
+    var thirdDateRange = 'M'+ k +':P'+l;
+
+    //region First Date Range
+      spreadsheet.getRange(firstDateRange).activate();
+      var conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(firstDateRange)])
+      .whenCellNotEmpty()
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(firstDateRange)])
+      .whenNumberEqualTo(1)
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(firstDateRange)])
+      .whenCellNotEmpty()
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(firstDateRange)])
+      .whenNumberEqualTo(0)
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(firstDateRange)])
+      .whenNumberEqualTo(0)
+      .setBackground('#FF0000')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+    //#endregion
+
+    //region Second Date Range
+    //spreadsheet.getRange('F3:J8').activate();
+      spreadsheet.getRange(secondDateRange).activate();
+      var conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(secondDateRange)])
+      .whenCellNotEmpty()
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(secondDateRange)])
+      .whenNumberEqualTo(1)
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(secondDateRange)])
+      .whenCellNotEmpty()
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(secondDateRange)])
+      .whenNumberEqualTo(0)
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(secondDateRange)])
+      .whenNumberEqualTo(0)
+      .setBackground('#FF0000')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+    //endregion
+
+    //region Third Date Range
+      //spreadsheet.getRange('M3:P8').activate();
+      spreadsheet.getRange(thirdDateRange).activate();
+      var conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(thirdDateRange)])
+      .whenCellNotEmpty()
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(thirdDateRange)])
+      .whenNumberEqualTo(1)
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(thirdDateRange)])
+      .whenCellNotEmpty()
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(thirdDateRange)])
+      .whenNumberEqualTo(0)
+      .setBackground('#B7E1CD')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+      conditionalFormatRules = spreadsheet.getActiveSheet().getConditionalFormatRules();
+      conditionalFormatRules.splice(conditionalFormatRules.length - 1, 1, SpreadsheetApp.newConditionalFormatRule()
+      .setRanges([spreadsheet.getRange(thirdDateRange)])
+      .whenNumberEqualTo(0)
+      .setBackground('#FF0000')
+      .build());
+      spreadsheet.getActiveSheet().setConditionalFormatRules(conditionalFormatRules);
+    //endregion
+};
+
+function setWeekend(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var firstWeekEndRange = 'D'+ m + ':E' + n //'D3:E8'
+  var secondWeekEndRange = 'K'+ m + ':L' + n //'K3:L8'
+
+  spreadsheet.getRange(firstWeekEndRange).activate()
+  .merge();
+  spreadsheet.getRange(secondWeekEndRange).activate()
+  .merge();
+  spreadsheet.getRange(firstWeekEndRange).activate();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center')
+  .setVerticalAlignment('middle');
+  spreadsheet.getCurrentCell().setValue('Weekend');
+  spreadsheet.getRange(secondWeekEndRange).activate();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center')
+  .setVerticalAlignment('middle');
+  spreadsheet.getCurrentCell().setValue('Weekend');
+
+};
+
+function setDefaultAttendance(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var firsDateRange = 'C'+ m + ':C' + n //'C3:C8'
+  var secondDateRange = 'F'+ m + ':J' + n //'F3:J8'
+  var thirdDateRange = 'M'+ m + ':P' + n //'M3:P8'
+
+  spreadsheet.getRange(firsDateRange).activate();
+  spreadsheet.getActiveRange().setValue(1);
+
+  spreadsheet.getRange(secondDateRange).activate();
+  spreadsheet.getActiveRange().setValue(1);
+
+  spreadsheet.getRange(thirdDateRange).activate();
+  spreadsheet.getActiveRange().setValue(1);
+
+  spreadsheet.getRange(firsDateRange).activate();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
+  spreadsheet.getRange(secondDateRange).activate();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
+  spreadsheet.getRange(thirdDateRange).activate();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
+
+};
+
+function calculateSprintAttendance(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var activeRange = 'B'+ m + ':B' + n  ;//'B3:B8'
+  var getSumOfDays = '=SUM(C'+m+',F'+m+',G'+m+',H'+m+',I'+m+',J'+m+',M'+m+',N'+m+',O'+m+',P'+m+')';//'=SUM(C3,F3,G3,H3,I3,J3,M3,N3,O3,P3)'
+
+  spreadsheet.getRange('B'+ m).activate();
+  spreadsheet.getCurrentCell().setFormula(getSumOfDays);
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange(activeRange), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+  spreadsheet.getRange(activeRange).activate();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
+};
+
+function resizeCols(){
+  spreadsheet.getActiveSheet().autoResizeColumns(3, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(4, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(5, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(6, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(7, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(8, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(9, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(10, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(11, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(12, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(13, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(14, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(15, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(16, 1);
+
+}
+//endregion
+
+function capacityOverview(){
+  for (let i = 1; i <= numberOfSprints; i = i + (numberOfDevResources + 2)) {
+      var sprintName = '\'Base Info\'!B'+initSprintBaseIndex;
+      var sprintStartDate = '\'Base Info\'!C'+initSprintBaseIndex;
+      var sprintEndDate = '\'Base Info\'!D'+initSprintBaseIndex;
+
+      spreadsheet.getRange('A'+ i).activate();
+      spreadsheet.getCurrentCell().setFormula('=CONCATENATE('+sprintName + ', " ", TO_TEXT('+sprintStartDate+'), " - " , TO_TEXT('+ sprintEndDate+'))');
+    
+      spreadsheet.getRange('A'+i +':P'+i).activate()
+      .mergeAcross();
+      spreadsheet.getActiveRangeList().setFontWeight('bold')
+      .setFontSize(13)
+      .setBackground('#b7b7b7');
+      spreadsheet.getRange('A'+i).activate();
+
+      //Set Sprint Columns
+      //why i+ 1 and i + 2 - because headers should start in the next row
+      
+      setCapacityOverColumns(i+1,sprintStartDate,spreadsheet);
+      setNonEngLabel(i+2,spreadsheet);
+      setResourceNames(i+2,spreadsheet);
+      getSprintAttendance(i+2,spreadsheet);
+      setDefaultPerDayEngNonEngHours(i+2,spreadsheet);
+      calcEngineeringHours(i+2,spreadsheet);
+      calcNonEngineeringHours(i+2,spreadsheet);
+      calcRemainingCapacity(i+2,spreadsheet);
+      calcTotalEngNonEngHours(i+1,spreadsheet); //i + 1 as engineering total is shown in second row
+      initSprintBaseIndex++;
+    }  
+    resizeCapacityOverviewCols();
+}
+
+//region All Sub Functions of Capacity Overview
+function setCapacityOverColumns(j,sprintStartDate,spreadsheet){
+  spreadsheet.getRange('A'+j).activate();
+  spreadsheet.getCurrentCell().setValue('Resource Name');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+
+
+  spreadsheet.getRange('B'+j).activate();
+  spreadsheet.getCurrentCell().setValue('No. of Days Present');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+
+  spreadsheet.getRange('C'+j).activate();
+  spreadsheet.getCurrentCell().setValue('/Day Engineering Hours');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+  spreadsheet.getRange('D'+j).activate();
+  spreadsheet.getCurrentCell().setValue('/Day Non-Engineering Hours');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+
+
+  spreadsheet.getRange('E'+j).activate();
+  spreadsheet.getCurrentCell().setValue('Engineering Available Capacity');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+
+  spreadsheet.getRange('F'+j).activate();
+  spreadsheet.getCurrentCell().setValue('Non-Engineering Available Capacity');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+
+  spreadsheet.getRange('G'+j).activate();
+  spreadsheet.getCurrentCell().setValue('Work Capacity');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+
+  spreadsheet.getRange('H'+j).activate();
+  spreadsheet.getCurrentCell().setValue('Remaining Capacity');
+   spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+ 
+  spreadsheet.getRange('I'+j).activate();
+  spreadsheet.getCurrentCell().setValue('Total Eng Available Capacity');
+  spreadsheet.getActiveRangeList().setBackground('#d9d9d9')
+  .setFontSize(9)
+  .setFontSize(8);
+}
+
+function resizeCapacityOverviewCols() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  spreadsheet.getActiveSheet().autoResizeColumns(2, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(3, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(4, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(5, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(6, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(7, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(8, 1);
+  spreadsheet.getActiveSheet().autoResizeColumns(9, 1);
+};
+
+function getSprintAttendance(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var dateRange =  'B'+ m + ':B' + n ;//'B3:B8'
+
+  spreadsheet.getRange('B'+m).activate();
+  spreadsheet.getCurrentCell().setFormula('=\'Sprints 2025\'!B'+m);
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange(dateRange), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+  spreadsheet.getRange(dateRange).activate();
+};
+
+function calcEngineeringHours(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var engineeringRange =  'E'+ m + ':E' + n ;//'C3:C8'
+
+
+  spreadsheet.getRange('E'+m).activate();
+  //spreadsheet.getCurrentCell().setFormula('=\'Base Info\'!B2*B'+m);
+  spreadsheet.getCurrentCell().setFormula('=B'+m+ '*C'+m);
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange(engineeringRange), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+  spreadsheet.getRange(engineeringRange).activate();
+};
+
+function calcNonEngineeringHours(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var nonEngineeringRange =  'F'+ m + ':F' + n ;//'D3:D8'
+
+
+  spreadsheet.getRange('F'+m).activate();
+  //spreadsheet.getCurrentCell().setFormula('=\'Base Info\'!C2*B'+m);
+  spreadsheet.getCurrentCell().setFormula('=B'+m+ '*D'+m);
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange(nonEngineeringRange), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+  spreadsheet.getRange(nonEngineeringRange).activate();
+};
+
+function calcRemainingCapacity(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var remainingCapacityRange = 'H'+ m + ':H' + n ; ; // 'F3:F8'
+
+  var remainingHoursFormula = '=(E'+ m +'+F'+ m +')-G'+m+'';//'=(C3+D3)-E3'
+  spreadsheet.getRange('H'+m).activate();
+  spreadsheet.getCurrentCell().setFormula(remainingHoursFormula);
+  spreadsheet.getActiveRange().autoFill(spreadsheet.getRange(remainingCapacityRange), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+};
+
+function setNonEngLabel(m,spreadsheet) {
+  spreadsheet.getRange('I'+ m).activate();
+  spreadsheet.getCurrentCell().setValue('Total Non Eng Available Capacity');
+};
+
+function calcTotalEngNonEngHours(m,spreadsheet) {
+  n = m + 1;
+  p = n + + (numberOfDevResources-1);
+  var engRange = '=SUM(E'+ n +':E'+ p +')'; //'=SUM(C3:C8)'
+  var nonEngRange = '=SUM(F'+ n +':F'+ p +')'; //'=SUM(D3:D8)'
+  spreadsheet.getRange('J'+ m).activate();
+  spreadsheet.getCurrentCell().setFormula(engRange);
+  spreadsheet.getRange('J'+ n).activate();
+  spreadsheet.getCurrentCell().setFormula(nonEngRange);
+  
+};
+
+function setDefaultPerDayEngNonEngHours(m,spreadsheet) {
+  n = m + + (numberOfDevResources-1);
+  var perDayEngHoursRange = 'C'+ m +':C' + n;  //'C3:C8'
+  var perDayNonEngHoursRange = 'D'+ m +':D' + n;  //'D3:D8'
+
+  spreadsheet.getRange('C'+m).activate();
+  spreadsheet.getCurrentCell().setValue('6');
+  spreadsheet.getRange(perDayEngHoursRange).activate();
+  spreadsheet.getRange('C'+m).copyTo(spreadsheet.getActiveRange(), SpreadsheetApp.CopyPasteType.PASTE_NORMAL, false);
+  spreadsheet.getRange('D'+m).activate();
+  spreadsheet.getCurrentCell().setValue('2');
+  spreadsheet.getRange(perDayNonEngHoursRange).activate();
+  spreadsheet.getRange('D'+m).copyTo(spreadsheet.getActiveRange(), SpreadsheetApp.CopyPasteType.PASTE_NORMAL, false);
+};
+//endregion
